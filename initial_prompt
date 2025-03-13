@@ -1,0 +1,18 @@
+I have a tool which I want to use to diagnose clients on my network. These are lightweight systems with only default python3 programs intalled such as sockets and OS
+
+Server:
+- Have a CLI tool to start listening, view connections, see returned PCAPS, and see connection information
+- Listen for connections from my clients: port 5000]
+- located at 192.168.1.253
+- When a connection is established, I want it to be added to a list of connections
+- when we view a connection, I want it to show us the connection information with items such as the IP addresses on every interface, the hostname, the username
+- we can start a packet capture on the client with an argument of length in seconds, after finishing, it will be returned to me and saved in folder ./pcaps/<hostname>_<time>.pcap
+- we can also select an option to issue arbitrary commands
+- we also save the connection information in a JSON file 
+
+Client:
+- have global variables as a list of the server IPs to try and and also the port to connect to
+- have a tool to collect that information including all IP addresses and send it back to the server
+- tool to analyse packets for given amount of time and then send them back 
+- tool to run arbitrary commands on the system
+- the ability to understand commmands from the server to execute the different options
