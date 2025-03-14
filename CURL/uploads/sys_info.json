@@ -1,0 +1,15 @@
+{
+    "hostname": "testlocal",
+    "username": "zachk",
+    "ip_addresses": [
+        "127.0.0.1",
+        "192.168.2.4"
+    ],
+    "operating_system": [
+        "Linux",
+        "testlocal",
+        "5.15.0-1061-raspi",
+        "#64-Ubuntu SMP PREEMPT Wed Aug 7 14:41:30 UTC 2024",
+        "aarch64"
+    ]
+}

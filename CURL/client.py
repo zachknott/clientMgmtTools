@@ -4,6 +4,71 @@ import platform
 import subprocess
 import requests
 import time
+import json
+
+SERVER_URL = "http://192.168.2.3:8000"
+
+def upload_file_using_requests(fname):
+    try:
+        response = requests.post(f"{SERVER_URL}/{fname}")
+        if response.status_code == 200:
+            print("File Successfully Uploaded.")
+        else:
+            print(f"Failed to upload: {response.status_code}")
+    except Exception as e:
+        print(f"Error uploading system info: {e}")
+        
+def upload_file_using_curl(fname):
+    # curl -X POST --data-binary @read1.pcap http://192.168.2.7:8000/read1.pcap
+    print(f"Uploading: {fname}")
+    try:
+        cmd = ["curl", "-X", "POST", "--data-binary", f"@{fname}", f"{SERVER_URL}/{fname}"]
+        process = subprocess.run(cmd, capture_output=True, text=True)
+        print(process.stdout)
+    except Exception as e:
+        print(f"Error uploading filed: {e}")
+        
+def upload_json_using_requests(dictionary, fname):
+    # Upload system info as JSON to the server
+
+    try:
+        response = requests.post(f"{SERVER_URL}/{fname}", json=info)
+        if response.status_code == 200:
+            print("Json uploaded successfully.")
+        else:
+            print(f"Failed to upload json: {response.status_code}")
+    except Exception as e:
+        print(f"Error uploading system info: {e}") 
+    
+def upload_json_using_curl(dictionary,fname):
+    # curl -X POST --data-binary @read1.pcap http://192.168.2.7:8000/read1.pcap
+    print(f"Uploading json to {fname}")
+    json_data = json.dumps(dictionary, indent=4)
+    try:
+        cmd = ["curl", 
+                "--header", "Content-Type: application/json", 
+                "--request", "POST",
+                "--data", f"{json_data}",
+                f"{SERVER_URL}/sys_info.json"]
+        process = subprocess.run(cmd, capture_output=True, text=True)
+        
+        print(process.stdout)
+        
+    except Exception as e:
+        print(f"Error uploading filed: {e}")
+
+def download_using_curl(fname,fpath="./"):
+    # curl http://192.168.2.7:8000/test.txt -o test.txt
+    print(f"Downloading: {fname}")
+    try:
+        cmd = ["curl", 
+                f"{SERVER_URL}/{fname}", 
+                "-o", f"{fpath}{fname}"]
+        # print(f"Executing: {' '.join(cmd)}")
+        process = subprocess.run(cmd, capture_output=True, text=True)
+        print(process.stdout)
+    except Exception as e:
+        print(f"Error uploading filed: {e}")
 
 def get_ip_addresses():
     """Collect all IPv4 addresses from network interfaces."""
@@ -20,12 +85,7 @@ def get_ip_addresses():
         print(f"Error getting IP addresses on Linux: {e}")
         return []
     
-
-if __name__ == "__main__":
-    # Define the server URL
-    SERVER_URL = "http://192.168.2.7:8000"
-    PACKET_COUNT = 100
-
+def upload_system_info():
     # Collect system information
     hostname = socket.gethostname()
     
@@ -45,48 +105,62 @@ if __name__ == "__main__":
     ip_addresses = get_ip_addresses()
     
     # Package system info into a dictionary
+    timestamp = time.strftime("%Y-%m-%d_%H:%M:%S")
+    
     info = {
         "hostname": hostname,
         "username": username,
         "ip_addresses": ip_addresses,
+        "timestamp": timestamp,
         "operating_system": operating_system
     }
-
-    # Upload system info as JSON to the server
+    
     try:
-        response = requests.post(f"{SERVER_URL}/{hostname}_system_info", json=info)
-        if response.status_code == 200:
-            print("System info uploaded successfully.")
-        else:
-            print(f"Failed to upload system info: {response.status_code}")
+        upload_json_using_curl(info,"system_info.json")
     except Exception as e:
-        print(f"Error uploading system info: {e}")
-        
-# curl http://192.168.2.7:8000/test.txt -o test.txt
-# curl -X POST --data-binary @read1.pcap http://192.168.2.7:8000/read1.pcap
+        print(f"Error uploading system info: {e}") 
 
-
-    # Capture network traffic using tcpdump
-    timestamp = time.strftime("%Y-%m-%d_%H:%M:%S")
-    filename = f"{hostname}_{timestamp}.pcap"
-     
-    cmd = ["tcpdump", "-c", str(PACKET_COUNT), "-w", filename]
+def upload_TCP_dump(fname="read.pcap",count=100):
+    cmd = ["tcpdump", "-c", str(count), "-w", fname]
     try:
         process = subprocess.run(cmd, capture_output=True, text=True)
         if process.returncode == 0:
             print("tcpdump capture completed.")
             # Upload the capture file to the server
-            try:
-                with open(filename, "rb") as f:
-                    response = requests.post(f"{SERVER_URL}/{filename}", data=f)
-                if response.status_code == 200:
-                    print("Capture file uploaded successfully.")
-                else:
-                    print(f"Failed to upload capture file: {response.status_code}")
+            try:     
+                upload_file_using_curl(fname)
             except Exception as e:
-                print(f"Error uploading capture file: {e}")
+                print(f"Error uploading capture file: {e}") 
+                
         else:
             print(f"tcpdump failed with return code {process.returncode}")
             print(process.stderr)
+            
     except Exception as e:
         print(f"Error running tcpdump: {e}")
+    
+def main():
+    
+    try:
+        upload_system_info()
+    except Exception as e:
+        print(f"System Info Upload Failed: {e}")
+    
+
+    count = 100
+    hostname = socket.gethostname()
+    timestamp = time.strftime("%Y-%m-%d_%H:%M:%S")
+    filename = f"{hostname}_{timestamp}.pcap"  
+    
+    try:
+        upload_TCP_dump(filename,count)
+    except Exception as e:
+        print(f"TCP Dump Failed: {e}")
+    
+    try:
+        download_using_curl("test.txt")
+    except Exception as e:
+        print(f"Download Failed: {e}")
+
+if __name__ == "__main__":
+    main()

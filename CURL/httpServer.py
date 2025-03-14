@@ -5,10 +5,12 @@ class SimpleHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         content_length = int(self.headers['Content-Length'])
         file_content = self.rfile.read(content_length)
-        filename = self.path.strip('/') or 'uploaded_file.pcap'
+        filename = self.path.strip('/')
         filename = f"uploads/{filename}"
+        
         with open(filename, 'wb') as f:
             f.write(file_content)
+            
         self.send_response(200)
         self.end_headers()
         self.wfile.write(b'File uploaded successfully')
