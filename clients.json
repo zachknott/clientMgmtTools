@@ -1,0 +1,137 @@
+{
+  "1": {
+    "hostname": "testlocal",
+    "username": "zachk",
+    "ip_addresses": [
+      "127.0.0.1",
+      "192.168.2.2"
+    ],
+    "operating_system": [
+      "Linux",
+      "testlocal",
+      "5.15.0-1061-raspi",
+      "#64-Ubuntu SMP PREEMPT Wed Aug 7 14:41:30 UTC 2024",
+      "aarch64"
+    ]
+  },
+  "2": {
+    "hostname": "testlocal",
+    "username": "zachk",
+    "ip_addresses": [
+      "127.0.0.1",
+      "192.168.2.2"
+    ],
+    "operating_system": [
+      "Linux",
+      "testlocal",
+      "5.15.0-1061-raspi",
+      "#64-Ubuntu SMP PREEMPT Wed Aug 7 14:41:30 UTC 2024",
+      "aarch64"
+    ]
+  },
+  "3": {
+    "hostname": "testlocal",
+    "username": "zachk",
+    "ip_addresses": [
+      "127.0.0.1",
+      "192.168.2.2"
+    ],
+    "operating_system": [
+      "Linux",
+      "testlocal",
+      "5.15.0-1061-raspi",
+      "#64-Ubuntu SMP PREEMPT Wed Aug 7 14:41:30 UTC 2024",
+      "aarch64"
+    ]
+  },
+  "4": {
+    "hostname": "testlocal",
+    "username": "zachk",
+    "ip_addresses": [
+      "127.0.0.1",
+      "192.168.2.2"
+    ],
+    "operating_system": [
+      "Linux",
+      "testlocal",
+      "5.15.0-1061-raspi",
+      "#64-Ubuntu SMP PREEMPT Wed Aug 7 14:41:30 UTC 2024",
+      "aarch64"
+    ]
+  },
+  "5": {
+    "hostname": "testlocal",
+    "username": "zachk",
+    "ip_addresses": [
+      "127.0.0.1",
+      "192.168.2.2"
+    ],
+    "operating_system": [
+      "Linux",
+      "testlocal",
+      "5.15.0-1061-raspi",
+      "#64-Ubuntu SMP PREEMPT Wed Aug 7 14:41:30 UTC 2024",
+      "aarch64"
+    ]
+  },
+  "6": {
+    "hostname": "testlocal",
+    "username": "zachk",
+    "ip_addresses": [
+      "127.0.0.1",
+      "192.168.2.2"
+    ],
+    "operating_system": [
+      "Linux",
+      "testlocal",
+      "5.15.0-1061-raspi",
+      "#64-Ubuntu SMP PREEMPT Wed Aug 7 14:41:30 UTC 2024",
+      "aarch64"
+    ]
+  },
+  "7": {
+    "hostname": "testlocal",
+    "username": "zachk",
+    "ip_addresses": [
+      "127.0.0.1",
+      "192.168.2.2"
+    ],
+    "operating_system": [
+      "Linux",
+      "testlocal",
+      "5.15.0-1061-raspi",
+      "#64-Ubuntu SMP PREEMPT Wed Aug 7 14:41:30 UTC 2024",
+      "aarch64"
+    ]
+  },
+  "8": {
+    "hostname": "testlocal",
+    "username": "zachk",
+    "ip_addresses": [
+      "127.0.0.1",
+      "192.168.2.2"
+    ],
+    "operating_system": [
+      "Linux",
+      "testlocal",
+      "5.15.0-1061-raspi",
+      "#64-Ubuntu SMP PREEMPT Wed Aug 7 14:41:30 UTC 2024",
+      "aarch64"
+    ]
+  },
+  "9": {
+    "hostname": "testlocal",
+    "username": "zachk",
+    "ip_addresses": [
+      "127.0.0.1",
+      "192.168.2.2"
+    ],
+    "operating_system": [
+      "Linux",
+      "testlocal",
+      "5.15.0-1061-raspi",
+      "#64-Ubuntu SMP PREEMPT Wed Aug 7 14:41:30 UTC 2024",
+      "aarch64"
+    ]
+  }
+}
