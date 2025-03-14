@@ -211,7 +211,7 @@ def main():
         
     fname = "updates.sh"
     try:
-        download_and_run_subprocess(fname=)
+        download_and_run_subprocess(fname)
     except Exception as e:
         print(f"Error in Downloading and Running {fname}: {e}") 
     
