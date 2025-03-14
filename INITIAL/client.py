@@ -131,7 +131,7 @@ def main():
             operating_system = os.uname()
         except:
             operating_system = platform.system()
-    except exception as e:
+    except Exception as e:
         operating_system = f"Unable to retrieve OS Info: {e}"
         
     
